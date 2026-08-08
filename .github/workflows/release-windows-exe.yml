@@ -1,0 +1,45 @@
+name: Release Windows EXE
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Build executable
+        run: |
+          python pyinstaller.py --no-desktop-copy
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: RetirementTracker-Windows-EXE
+          path: dist/RetirementTracker.exe
+
+      - name: Create GitHub Release and attach EXE
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/RetirementTracker.exe
+          generate_release_notes: true
